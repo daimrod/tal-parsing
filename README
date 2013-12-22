@@ -1,0 +1,18 @@
+# -*- mode: org; -*-
+
+* Projet 4
+Définir un programme prenant une grammaire TAG lexicalisée et une
+chaîne de caractères en entrée et affichant si la chaîne est
+analysable ou non avec la grammaire donnée. Le gros du travail va
+consistera définir cet algorithme en effectuant une recherche
+bibliographique sur les algorithmes d'analyse des TAG. Le programme
+sera testé sur une grammaire « jouet ».
+
+** Travail facultatif
+Le programme fournira un ou tous les arbres syntaxiques.
+
+* Ressources
+- [[http://www.let.rug.nl/~vannoord/papers/diss/diss/node59.html][Tree Adjoining Grammars (tutorial)]]
+- [[http://en.wikipedia.org/wiki/Tree-adjoining_grammar][Tree-adjoining grammar - Wikipedia, the free encyclopedia]]
+- [[file:TAL%20Parsing%20In%20O(N^6)%20Time%20by%20SANGUTHEVAR%20RAJASEKARAN.pdf][TAL Parsing In O(N^6) Time by SANGUTHEVAR RAJASEKARAN.pdf]]
+- [[file:TAL%20Recognition%20in%20O(M(n^2))%20Time.pdf][TAL Recognition in O(M(n^2)) Time.pdf]]
