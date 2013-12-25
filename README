@@ -16,3 +16,43 @@ Le programme fournira un ou tous les arbres syntaxiques.
 - [[http://en.wikipedia.org/wiki/Tree-adjoining_grammar][Tree-adjoining grammar - Wikipedia, the free encyclopedia]]
 - [[file:TAL%20Parsing%20In%20O(N^6)%20Time%20by%20SANGUTHEVAR%20RAJASEKARAN.pdf][TAL Parsing In O(N^6) Time by SANGUTHEVAR RAJASEKARAN.pdf]]
 - [[file:TAL%20Recognition%20in%20O(M(n^2))%20Time.pdf][TAL Recognition in O(M(n^2)) Time.pdf]]
+
+* Notes                                                            :noexport:
+** CKY
+Afin de mieux comprendre les algorithmes proposés pour l'analyse des
+grammaires sur les Tree Adjoining Grammars, j'ai implémenté
+l'algorithme CKY qui permet d'analyser les grammaires hors-contextes.
+
+Il semblerait que l'algorithme proposé par Sanguthevar Rajasekaran
+soit une variante de l'algorithme de CKY appliqué aux TAGs.
+
+Peut-être que j'implémenterais l'algorithme de Earley...
+
+*** HOWTO use ~cky.el~?
+#+BEGIN_SRC emacs-lisp
+  (load-file "cky.el")
+  (cky-algorithm '((S   -> NP VP)
+                   (VP  -> VP PP)
+                   (VP  -> V NP)
+                   (VP  -> eats)
+                   (PP  -> P NP)
+                   (NP  -> Det N)
+                   (NP  -> she)
+                   (V   -> eats)
+                   (P   -> with)
+                   (N   -> fish)
+                   (N   -> fork)
+                   (Det -> a))
+                 '(she eats a fish with a fork))
+#+END_SRC
+
+#+RESULTS:
+| (NP)   | (S)  | nil  | (S) | nil | nil  | (S) |
+| (V VP) | nil  | (VP) | nil | nil | (VP) | nil |
+| (Det)  | (NP) | nil  | nil | nil | nil  | nil |
+| (N)    | nil  | nil  | nil | nil | nil  | nil |
+| (P)    | nil  | (PP) | nil | nil | nil  | nil |
+| (Det)  | (NP) | nil  | nil | nil | nil  | nil |
+| (N)    | nil  | nil  | nil | nil | nil  | nil |
+
+
