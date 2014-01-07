@@ -61,6 +61,9 @@ soit une variante de l'algorithme de CKY appliqué aux TAGs.
 Peut-être que j'implémenterais l'algorithme de Earley...
 
 ** TAL parsing
+*** DONE X ∈ A[i, j, k, l]
+    - State "DONE"       from "TODO"       [2014-01-07 Tue 03:05] \\
+      see tal/add-node-frontier
 I think I know what's wrong with my current implementation.
 
 I have to ensure that the correct properties are satisfied before
@@ -70,3 +73,6 @@ p216).
 
 That's probably why I have too many wrong results but not why some
 inputs aren't properly parsed (e.g. "aeb").
+
+*** Determine why
+only "e" is recognized by the grammar...
