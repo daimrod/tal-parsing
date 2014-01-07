@@ -103,37 +103,41 @@ it)."
   (let ((frontier (mapcar #'bt/node-symbol (bt/leaves node 'terminal)))
         (n (length input))
         bool)
-    (setf bool (bt/node-p node))
+    ;; (setf bool (bt/node-p node))
 
-    ;; check the first part (i -> j)
-    (when bool
-      (loop for x from (1+ i) to j
-            for el = (pop frontier)
+    ;; ;; check the first part (i -> j)
+    ;; (when bool
+    ;;   (loop for x from (1+ i) to j
+    ;;         for el = (pop frontier)
             
-            if (or (not (eq el (elt input x)))
-                   (not el))
-            do (setf bool nil)
+    ;;         if (or (not (eq el (elt input x)))
+    ;;                (not el))
+    ;;         do (setf bool nil)
             
-            while bool))
+    ;;         while bool))
     
-    ;; check the second part (k -> l)
-    (when bool
-      (loop for x from (1+ k) to l 
-            for el = (pop frontier)
+    ;; ;; check the second part (k -> l)
+    ;; (when bool
+    ;;   (loop for x from (1+ k) to l 
+    ;;         for el = (pop frontier)
             
-            if (or (not (eq el (elt input x)))
-                   (not el))
-            do (setf bool nil)
+    ;;         if (or (not (eq el (elt input x)))
+    ;;                (not el))
+    ;;         do (setf bool nil)
             
-            while bool))
+    ;;         while bool))
 
     ;; if it's okay, add the node to A[i, j, k, l]
-    (when (and bool
-               (not frontier)
-               (not (find node (elt (elt (elt (elt A i) j) k) l))))
-      (push node (elt (elt (elt (elt A i) j) k) l))
-      (push "OK"
-            tmp/trace))))
+    (push node (elt (elt (elt (elt A i) j) k) l))
+    (push "OK"
+          tmp/trace)
+    ;; (when (and bool
+    ;;            (not frontier)
+    ;;            (not (find node (elt (elt (elt (elt A i) j) k) l))))
+    ;;   (push node (elt (elt (elt (elt A i) j) k) l))
+    ;;   (push "OK"
+    ;;         tmp/trace))
+    ))
 
 (defun tal/case-1 (A tag input i j k l)
   "Case 1 corresponds to situation where the left sibling is the
@@ -230,7 +234,7 @@ in A[i, j, j, l]."
               (loop for node in right
                     ;; put their parent in A[i, j, j, l]
                     do (tal/add-node-frontier (bt/node-parent node) input
-                                           A i j j l)))))
+                                              A i j j l)))))
 
 (defun tal/case-4 (A tag input i j k l)
   "Case 4 corresponds to the case where a node Y has only one
@@ -256,24 +260,25 @@ Case 4 again if Y has no siblings."
 p] and Y is the root of an auxiliary tree with the same symbol as
 that of X, such that Y is in A[i, m, p, l]."
   (push (format "tal/case-5 (%d, %d, %d, %d)" i j k l) tmp/trace)
-  (loop for m from i to j
+  (loop for m from i to k
         do
-        (loop for p from k to l
+        (loop for p from m to l
               do
-              (loop for X in (remove-if-not (lambda (node)
-                                              (find node (tal/tag-auxiliary-trees tag)))
-                                            (elt (elt (elt (elt A m)
-                                                           j)
-                                                      k)
-                                                 p))
+              (loop for Y in (remove-if-not
+                              (lambda (node)
+                                (find node (tal/tag-auxiliary-trees tag)))
+                              (elt (elt (elt (elt A i)
+                                             m)
+                                        p)
+                                   l))
                     do
-                    (loop for Y in (elt (elt (elt (elt A i)
-                                                     m)
-                                                p)
-                                           l)
-                          if (eq (bt/node-symbol Y)
-                                 (bt/node-symbol X))
-                          do (tal/add-node-frontier Y input
+                    (loop for X in (elt (elt (elt (elt A m)
+                                                  j)
+                                             k)
+                                        p)
+                          if (eq (bt/node-symbol X)
+                                 (bt/node-symbol Y))
+                          do (tal/add-node-frontier X input
                                                     A i j k l))))))
 
 (defun tal/init-frontier (A tag input n)
@@ -387,8 +392,9 @@ Return nil if NODE has no sibling."
     (let ((ret (case side
                  (left (bt/node-left (bt/node-parent node)))
                  (right (bt/node-right (bt/node-parent node)))
-                 (otherwise (or (bt/node-left (bt/node-parent node))
-                                (bt/node-right (bt/node-parent node)))))))
+                 (otherwise
+                  (or (bt/node-sibling node 'left)
+                      (bt/node-sibling node 'right))))))
       (unless (eq ret node)
         ret))))
 
