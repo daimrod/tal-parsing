@@ -187,7 +187,7 @@ and the right sibling ∈ A[m, p, p, l] then we can put the parent
 in A[i, j, j, l]."
   ;; debug
   ;; (push (format "tal/case-3 (%d, %d, %d, %d)" i j k l) tmp/trace)
-  (loop for m from i to l
+  (loop for m from i to (1- l)
         do
         (loop for p from m to l
               ;; for all left siblings in A[i, j, j, m]
