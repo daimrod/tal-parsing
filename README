@@ -1,4 +1,5 @@
 # -*- mode: org; -*-
+#+STARTUP: entitiespretty
 
 * Projet 4
 Définir un programme prenant une grammaire TAG lexicalisée et une
@@ -14,11 +15,180 @@ syntaxiques.
 ** Travail facultatif
 Le programme fournira un ou tous les arbres syntaxiques.
 
-* Ressources
+* Travail réalisé
+J'ai implémenté l'algorithme de reconnaissance de TAG décrit par Joshi
+et Vijayashanker dans leur article de 1985 intitulé « Some
+computational properties of tree adjoining grammars ».
+
+Cet algorithme permet de reconnaître les chaînes de caractères
+générées par des grammaires TAGs normalisée. C'est à dire que tous les
+noeuds ont deux enfants au plus.
+
+C'est le premier algorithme en temps polynomial présenté pour
+l'analyse de TALs. La complexité de l'algorithme est O(n^6).
+
+** L'algorithme
+L'algorithme utilisé est une modification de l'algorithme de CKY
+utilisé pour les CFGs et fonctionne de la manière suivante:
+
+Soit une chaîne en entrée a_{1}...a_{n}. On utilise un tableau A à quatres
+dimensions dans lequel on va mémoriser tous les arbres et arbres
+dérivés calculés. 
+
+Soit X, un noeud de l'arbre \gamma{}, appartenir à A[i, j, k, l] signifie que
+sa frontière est soit de la forme a_{i+1}...a_{j }Y a_{k+1}...a_{l} avec Y le
+noeud de pied (« foot node », un noeud où une adjonction est possible)
+de \gamma{}, soit de la forme a_{i+1}...a_{l} (j = k).
+
+L'algorithme va ensuite effectuer n^{4} itérations pour tester tous les
+i, j, k, l possibles et construire tous les arbres correspondant à des
+sous-chaînes de la chaîne analysée.
+
+À chaque itération, l'algorithme va considérer les 5 cas suivants:
+1. Un noeud \mu_{1} \in A[i, j, k, p] et un noeud \mu_{2} \in A[p, m, m, l]
+   sont respectivement les enfants gauche et droit d'un noeud \mu{}.
+   Alors, si \mu_{1} est l'ancêtre d'un noeud de pied, \mu{} \in A[i, j, k, l].
+2. Ce cas est symétrique au précédent et correspond au cas où c'est \mu_{2}
+   qui est l'ancêtre d'un noeud de pied.
+3. Si \mu{} est le parent de \mu_{1} \in A[i, j, j, k] et de \mu_{2} \in A[k, m,
+   m, l], alors \mu{} \in A[i, j, j, l].
+4. Si le seul enfant de \mu{} est \mu_{1} \in A[i, j, k, l], alors \mu{} \in
+   A[i, j, k, l]. On recommence cette étape tant que \mu{} est le seul
+   enfant de son parent.
+5. Soit noeud \mu_{2} \in A[m, j, k, p] et \mu_{1} \in A[i, m, p, l], si on
+   peut adjoindre \mu_{1} à \mu_{2} alors \mu_{2} \in A[i, j, k, l].
+
+Une chaîne est reconnues lorsque un arbre initial est ajouté dans A[0,
+j, j, n] avec $0 <= j <= n$.
+
+** Implémentation
+J'ai implémenté l'algorithme en Emacs Lisp, un dialect de Lisp utilisé
+par le programme Emacs.
+
+L'algorithme permet de reconnaître les chaînes générées par des TAGs
+sous formes normales mais ne donne pas la ou les dérivations
+utilisées. De plus, dans sa forme actuelle, mon implémentation ne
+supporte pas les contraintes locales (/Selective Adjoining/, /Null
+Adjoining/ et /Obligating Adjoining/).
+
+Durant l'implémentation de l'algorithme, j'ai remarqué que les auteurs
+s'étaient trompés dans les indices du cas 2.
+
+Les auteurs proposent de l'implémenter de la manière suivante:
+#+BEGIN_SRC R
+  for m=i to j-1 step 1 do
+    for p=m+1 to j step 1 do
+      for all left siblings in A[i, m, m, p] and right siblings in A[p,
+      j, k, l] satisfying appropriate restrictions, put their parents in
+      A[i, j, k, l]
+#+END_SRC
+
+or ~m~ doit varier de ~i~ à ~j~ (pas ~j-1~) et de façon similaire, ~p~
+doit varier de ~m~ (pas ~m+1~) à ~j~.
+
+Il me fut difficile de repérer cette erreur en grande partie parce que
+l'on travaille en 4 dimensions, ce qui complique la visualisation et
+donc le debogage.
+
+** Comment l'utiliser ?
+Pour fonctionner, il faudra le logiciel GNU/Emacs en version 23 ou 24.
+
+Deux TAGs d'exmples sont déjà inclu dans le fichier ~tal-parsing.el~.
+- tal/tag-example-1 :: $L = { a^{n} e b^{n} / n >= 0 }$
+- tal/tag-example-2 :: $L = { w c^{2n} / n >= 0 }$ où ~w~ est une suite
+     de ~n~ ~a b~.
+
+On peut soit l'utiliser en ligne de commande:
+#+BEGIN_SRC sh :results output raw
+  emacs23 -batch -l tal-parsing.el \
+      --eval "(tal/parsing tal/tag-example-1 '(a a e b b))"
+#+END_SRC
+
+#+RESULTS:
+recognized
+
+#+BEGIN_SRC sh :results output raw
+  emacs23 -batch -l tal-parsing.el \
+      --eval "(tal/parsing tal/tag-example-2 '(a b a b c c c c))"
+#+END_SRC
+
+#+RESULTS:
+recognized
+
+#+BEGIN_SRC sh :results output raw
+  emacs23 -batch -l tal-parsing.el \
+      --eval "(tal/parsing tal/tag-example-2 '(a b c))"
+#+END_SRC
+
+#+RESULTS:
+not-recognized
+
+soit directement dans Emacs en utilisant le REPL intégré (M-x ielm).
+1. emacs -l tal-parsing.el
+2. M-x ielm
+3. (tal-parsing tal/tag-example-1 '(e))
+
+*** Création de grammaire
+Pour ajouter de nouvelle grammaire il faut modifier le fichier
+~tal-parsing.el~. Deux grammaires d'exemples se trouvent à la fin du
+fichier.
+
+En voici une:
+#+BEGIN_SRC emacs-lisp
+  ;; L = { a^n e b^n / n >= 0 }
+  (defvar tal/tag-example-1 (make-tal/tag
+                             :initial-trees (bt/make-trees '((S e)))
+                             :auxiliary-trees (bt/make-trees '((S a (T S b))
+                                                               (T a (S T b))))))
+#+END_SRC
+
+
+Une grammaire TAG est composée d'arbre initiaux, et d'arbre
+auxiliaires. 
+
+- Toutes les feuilles des arbres initiaux sont des symboles terminaux.
+- Toutes les feuilles des arbres auxiliaires sont des éléments
+  terminaux sauf une, qui est le même symbole non-terminal que la
+  racine.
+- Sont considérés symboles terminaux tous les symboles écrit en
+  minuscules.
+- Sont considérés symboles non-terminaux tous les symboles écrit en
+  majuscules.
+
+L'arbre initial ~(S e)~ peut être représenté de la façon suivante:
+#+BEGIN_SRC text
+  S
+  |
+  |
+  e
+#+END_SRC
+
+L'arbre auxiliaire ~(S a (T S b))~ peut être représenté de la façon
+suivante:
+#+BEGIN_SRC text
+     S      
+    / \     
+   /   \    
+  a     T   
+       / \  
+      /   \ 
+     S     b
+#+END_SRC
+Pour chaque arbre, on a donc:
+- le premier élément d'une liste est le symbole à la racine,
+- le second élément d'une liste est l'enfant à gauche de la racine,
+- le troisième élément d'une liste est l'enfant à droite de la racine;
+
+
+Attention, aucune vérification n'est effectuée pour s'assurer que la
+grammaire est sous forme normale.
+
+* Ressources                                                       :noexport:
 - [[http://www.let.rug.nl/~vannoord/papers/diss/diss/node59.html][Tree Adjoining Grammars (tutorial)]]
 - [[http://en.wikipedia.org/wiki/Tree-adjoining_grammar][Tree-adjoining grammar - Wikipedia, the free encyclopedia]]
-- [[file:TAL%20Parsing%20In%20O(N^6)%20Time%20by%20SANGUTHEVAR%20RAJASEKARAN.pdf][TAL Parsing In O(N^6) Time by SANGUTHEVAR RAJASEKARAN.pdf]]
-- [[file:TAL%20Recognition%20in%20O(M(n^2))%20Time.pdf][TAL Recognition in O(M(n^2)) Time.pdf]]
+- [[file:TAL%20Parsing%20In%20O(N^6)%20Time%20by%20SANGUTHEVAR%20RAJASEKARAN.pdf][TAL Parsing In O(N^6) Time by SANGUTHEVAR RAJASEKARAN (pdf)]]
+- [[file:TAL%20Recognition%20in%20O(M(n^2))%20Time.pdf][TAL Recognition in O(M(n^2)) Time (pdf)]]
+- [[file:Some%20computational%20properties%20of%20tree%20adjoining%20grammars%20by%20Vijayashanker%20and%20Joshi.pdf][Some computational properties of tree adjoining grammars by Vijayashanker and Joshi (pdf)]]
 
 * Notes                                                            :noexport:
 ** CKY
@@ -74,5 +244,7 @@ p216).
 That's probably why I have too many wrong results but not why some
 inputs aren't properly parsed (e.g. "aeb").
 
-*** Determine why
+*** DONE Determine why
+    - State "DONE"       from ""           [2014-01-07 Tue 23:58] \\
+      It's fixed!!!
 only "e" is recognized by the grammar...
